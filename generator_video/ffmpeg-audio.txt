@@ -1,0 +1,55 @@
+ffmpeg version 4.2.2 Copyright (c) 2000-2019 the FFmpeg developers
+  built with Apple clang version 11.0.0 (clang-1100.0.33.17)
+  configuration: --prefix=/usr/local/Cellar/ffmpeg/4.2.2_2 --enable-shared --enable-pthreads --enable-version3 --enable-avresample --cc=clang --host-cflags= --host-ldflags= --enable-ffplay --enable-gnutls --enable-gpl --enable-libaom --enable-libbluray --enable-libmp3lame --enable-libopus --enable-librubberband --enable-libsnappy --enable-libtesseract --enable-libtheora --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxvid --enable-lzma --enable-libfontconfig --enable-libfreetype --enable-frei0r --enable-libass --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libopenjpeg --enable-librtmp --enable-libspeex --enable-libsoxr --enable-videotoolbox --disable-libjack --disable-indev=jack
+  libavutil      56. 31.100 / 56. 31.100
+  libavcodec     58. 54.100 / 58. 54.100
+  libavformat    58. 29.100 / 58. 29.100
+  libavdevice    58.  8.100 / 58.  8.100
+  libavfilter     7. 57.100 /  7. 57.100
+  libavresample   4.  0.  0 /  4.  0.  0
+  libswscale      5.  5.100 /  5.  5.100
+  libswresample   3.  5.100 /  3.  5.100
+  libpostproc    55.  5.100 / 55.  5.100
+Input #0, mov,mp4,m4a,3gp,3g2,mj2, from '/Users/carltonsegbefia/Stuff/Projects/Blogs/Metalsmith/src/music-based-generative-line-art/src/generator_video/Inova - Disowned.mp4':
+  Metadata:
+    major_brand     : isom
+    minor_version   : 512
+    compatible_brands: isomiso2avc1mp41
+    encoder         : Lavf58.29.100
+    comment         : Made with Video Export for Processing - https://git.io/vAXLk
+  Duration: 00:04:39.40, start: 0.000000, bitrate: 101 kb/s
+    Stream #0:0(und): Video: h264 (High) (avc1 / 0x31637661), yuv420p, 800x800, 98 kb/s, 30 fps, 30 tbr, 15360 tbn, 60 tbc (default)
+    Metadata:
+      handler_name    : VideoHandler
+[mp3 @ 0x7fc8da814400] Estimating duration from bitrate, this may be inaccurate
+Input #1, mp3, from '/Users/carltonsegbefia/Stuff/Projects/Blogs/Metalsmith/src/music-based-generative-line-art/src/generator/free music/Inova - Disowned.mp3':
+  Metadata:
+    title           : Disowned
+    artist          : Inova
+    TBPM            : 123
+    genre           : Future Bounce
+    encoded_by      : LAME in FL Studio 12
+    date            : 2017
+  Duration: 00:04:39.38, start: 0.000000, bitrate: 320 kb/s
+    Stream #1:0: Audio: mp3, 44100 Hz, stereo, fltp, 320 kb/s
+Stream mapping:
+  Stream #1:0 (mp3float) -> apad
+  apad -> Stream #0:0 (aac)
+  Stream #0:0 -> #0:1 (copy)
+Press [q] to stop, [?] for help
+Output #0, mp4, to '/Users/carltonsegbefia/Stuff/Projects/Blogs/Metalsmith/src/music-based-generative-line-art/src/generator_video/temp-with-audio.mp4':
+  Metadata:
+    major_brand     : isom
+    minor_version   : 512
+    compatible_brands: isomiso2avc1mp41
+    comment         : Made with Video Export for Processing - https://git.io/vAXLk
+    encoder         : Lavf58.29.100
+    Stream #0:0: Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 128 kb/s
+    Metadata:
+      encoder         : Lavc58.54.100 aac
+    Stream #0:1(und): Video: h264 (High) (avc1 / 0x31637661), yuv420p, 800x800, q=2-31, 98 kb/s, 30 fps, 30 tbr, 15360 tbn, 15360 tbc (default)
+    Metadata:
+      handler_name    : VideoHandler
+frame= 1148 fps=0.0 q=-1.0 size=     512kB time=00:00:38.19 bitrate= 109.8kbits/s speed=76.3x    frame= 2358 fps=2356 q=-1.0 size=    1536kB time=00:01:18.52 bitrate= 160.2kbits/s speed=78.5x    frame= 3534 fps=2354 q=-1.0 size=    2560kB time=00:01:57.70 bitrate= 178.2kbits/s speed=78.4x    frame= 4709 fps=2353 q=-1.0 size=    3584kB time=00:02:36.89 bitrate= 187.1kbits/s speed=78.4x    frame= 5787 fps=2314 q=-1.0 size=    4608kB time=00:03:12.80 bitrate= 195.8kbits/s speed=77.1x    frame= 6941 fps=2312 q=-1.0 size=    5888kB time=00:03:51.29 bitrate= 208.5kbits/s speed=77.1x    frame= 8132 fps=2322 q=-1.0 size=    7424kB time=00:04:31.00 bitrate= 224.4kbits/s speed=77.4x    frame= 8382 fps=2324 q=-1.0 Lsize=    8040kB time=00:04:39.40 bitrate= 235.7kbits/s speed=77.5x    
+video:3351kB audio:4392kB subtitle:0kB other streams:0kB global headers:0kB muxing overhead: 3.843078%
+[aac @ 0x7fc8da00d600] Qavg: 186.080
