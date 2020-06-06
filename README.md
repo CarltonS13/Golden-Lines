@@ -2,6 +2,9 @@
 
 Golden Lines is a music visualizer using processing and minim to create visualizations that look like this:
 
+![alt text](https://github.com/CarltonS13/Golden-Lines/blob/master/assets/kanye.png?raw=true)
+
+
 A video version can be seen here: [Musical Visualisation: Disowned on Vimeo](https://vimeo.com/user91116455/review/426576635/b896cc1ee9)
 
 ### Versions
@@ -16,4 +19,4 @@ You can find executables under the releases tag of this. Or by clicking [](https
 ### Contributing
 **Note**: Skip to releases if you don’t want to install anything.
 
-Firstly, install the processing editor from  [Processing.org](https://processing.org/). Then clone or download the repository. Finally open the .pde file in the folder of your choice to open it up in the processing editor. From here you can run, modify or freely compile the code. 
+Firstly, install the processing editor from  [Processing.org](https://processing.org/). Then clone or download the repository. Finally open the .pde file in the folder of your choice to open it up in the processing editor. From here you can run, modify or freely compile the code.
