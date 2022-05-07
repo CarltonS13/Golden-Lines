@@ -12,7 +12,7 @@ int selected = 0;
 int spacing = 16; // space between lines in pixels
 int border = spacing*2; // top, left, right, bottom border
 int amplification = 3; // frequency amplification factor
-int y = spacing;
+int ySpacing = spacing;
 float ySteps; // number of lines in y direction
 float lastx, lasty;
 
@@ -101,6 +101,8 @@ void draw() {
     //rescale the overal amplitude from 0 to 0.4, to -0.4 to 0.4
     float rand = map(song.mix.level(), 0, 0.4, -0.4, 0.4);
 
+    print(song.mix.level() + ":" + calcLevel(song.mix.toArray()) + "|");
+
     float new_y = ySteps+rand;
     ySteps = new_y;
 
@@ -110,11 +112,11 @@ void draw() {
     
     //draw the new line for  current song "frame"
     if (lastx > 0) {
-      line(x+border, y*ySteps+border, lastx, lasty);
+      line(x+border, ySpacing*ySteps+border, lastx, lasty);
     }
 
     lastx = x+border;
-    lasty = y*ySteps+border;
+    lasty = ySpacing*ySteps+border;
 
     if (song.isPlaying() == false) {
       saveFrame(timestamp()+"_##.png");
@@ -131,6 +133,18 @@ void stop() {
   minim.stop();
   super.stop();
 }
+
+float calcLevel(float[] samples){
+    float level = 0;
+    for (int i = 0; i < samples.length; i++)
+    {
+      level += (samples[i] * samples[i]);
+    }
+    level /= samples.length;
+    level = (float) Math.sqrt(level);
+    return level;
+  }
+
 
 String timestamp() {
   Calendar now = Calendar.getInstance();
