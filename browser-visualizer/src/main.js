@@ -29,6 +29,7 @@ const DEFAULT_SETTINGS = {
     gridAlternating: false,
     gridVolumeSpeed: 0,
     gridUniformRadialSpeed: true,
+    gridSpin: true,
     bands: [
         { label: 'Low', color: '#f29e4c', minHz: 20, maxHz: 250, weight: 0.3 },
         { label: 'Mid', color: '#efea5a', minHz: 250, maxHz: 4000, weight: 1.5 },
@@ -36,7 +37,34 @@ const DEFAULT_SETTINGS = {
     ],
 };
 
-let currentSettings = cloneSettings(DEFAULT_SETTINGS);
+const LOCAL_STORAGE_KEY = 'golden_lines_settings';
+
+function loadSettings() {
+    try {
+        const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            return {
+                ...cloneSettings(DEFAULT_SETTINGS),
+                ...parsed,
+                bands: (parsed.bands && parsed.bands.length > 0) ? parsed.bands.map(b => ({ ...b })) : cloneSettings(DEFAULT_SETTINGS).bands
+            };
+        }
+    } catch (e) {
+        console.error('Error loading settings from local storage:', e);
+    }
+    return cloneSettings(DEFAULT_SETTINGS);
+}
+
+function saveSettings(settings) {
+    try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(settings));
+    } catch (e) {
+        console.error('Error saving settings to local storage:', e);
+    }
+}
+
+let currentSettings = loadSettings();
 
 const app = document.querySelector('#app');
 
@@ -50,7 +78,7 @@ app.innerHTML = `
         an MP4 directly in the browser with Mediabunny.
       </p>
 
-      <div class="field">
+      <div class="field" title="Select the audio file (.mp3, .wav, etc.) to analyze and visualize">
         <label for="fileInput">Audio file</label>
         <input id="fileInput" type="file" accept="audio/*" />
       </div>
@@ -59,15 +87,15 @@ app.innerHTML = `
         <section class="settings-block">
           <h2 class="settings-block-header">Canvas <span class="section-toggle-arrow">▼</span></h2>
           <div class="settings-block-content" style="display: block;">
-            <div class="field compact">
+            <div class="field compact" title="Choose the background fill color of the visualizer canvas">
               <label for="backgroundColor">Background color</label>
               <input id="backgroundColor" type="color" value="#ffffff" />
             </div>
-            <div class="field compact">
+            <div class="field compact" title="Choose the color of the text overlay labels (song title, timing metadata)">
               <label for="textColor">Text color</label>
               <input id="textColor" type="color" value="#000000" />
             </div>
-            <div class="field compact">
+            <div class="field compact" title="Choose a pre-defined width and height ratio for the output visualizer">
               <label for="canvasPreset">Dimensions preset</label>
               <select id="canvasPreset">
                 <option value="square">Square (800 × 800)</option>
@@ -78,23 +106,23 @@ app.innerHTML = `
               </select>
             </div>
             <div class="field-row" id="customDimensionsRow" style="display: none;">
-              <div class="field compact">
+              <div class="field compact" title="Custom width of the canvas in pixels">
                 <label for="canvasWidth">Width (px)</label>
                 <input id="canvasWidth" type="number" min="200" max="3840" step="10" value="${currentSettings.width}" />
               </div>
-              <div class="field compact">
+              <div class="field compact" title="Custom height of the canvas in pixels">
                 <label for="canvasHeight">Height (px)</label>
                 <input id="canvasHeight" type="number" min="200" max="3840" step="10" value="${currentSettings.height}" />
               </div>
             </div>
-            <div class="field compact">
+            <div class="field compact" title="Target frame rate for preview animation playback and MP4 video generation">
               <label for="canvasFps">Export & Preview FPS</label>
               <select id="canvasFps">
                 <option value="30" ${currentSettings.fps === 30 ? 'selected' : ''}>30 FPS</option>
                 <option value="60" ${currentSettings.fps === 60 ? 'selected' : ''}>60 FPS</option>
               </select>
             </div>
-            <div class="field compact">
+            <div class="field compact" title="Choose the thickness of the drawn line brush path in pixels">
               <label for="strokeWidth">Stroke thickness</label>
               <input id="strokeWidth" type="range" min="1" max="10" step="1" value="3" />
               <output id="strokeWidthValue">3 px</output>
@@ -105,7 +133,7 @@ app.innerHTML = `
         <section class="settings-block">
           <h2 class="settings-block-header">Grid Layout <span class="section-toggle-arrow">▼</span></h2>
           <div class="settings-block-content" style="display: block;">
-            <div class="field compact">
+            <div class="field compact" title="Choose the shape style of the drawing path (Linear sweeping lines or Radial circular tracks)">
               <label for="gridLayoutType">Layout Type</label>
               <select id="gridLayoutType">
                 <option value="linear" ${currentSettings.gridLayoutType === 'linear' ? 'selected' : ''}>Linear Grid</option>
@@ -113,32 +141,38 @@ app.innerHTML = `
               </select>
             </div>
             <div class="field-row">
-              <div class="field compact">
+              <div class="field compact" title="Number of rows (Linear sweep rows or Concentric circular rings)">
                 <label for="gridRows">Rows</label>
                 <input id="gridRows" type="number" min="5" max="100" step="1" value="${currentSettings.gridRows}" />
               </div>
-              <div class="field compact">
+              <div class="field compact" title="Number of columns (Linear grid divisions or Radial angular sectors)">
                 <label for="gridCols">Columns</label>
                 <input id="gridCols" type="number" min="1" max="100" step="1" value="${currentSettings.gridCols}" />
               </div>
             </div>
-            <div class="field compact checkbox-row">
+            <div class="field compact checkbox-row" title="Reverse the sweep direction of odd rows or circular tracks (draws forward, then backward)">
               <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; font-weight: normal; text-transform: none; color: var(--text); margin-top: 6px;">
                 <input id="gridAlternating" type="checkbox" ${currentSettings.gridAlternating ? 'checked' : ''} style="cursor: pointer; width: 15px; height: 15px; border-radius: 4px; accent-color: var(--accent);" />
                 Alternating directions
               </label>
             </div>
-            <div class="field compact">
+            <div class="field compact" title="Dynamic speed multiplier: lets the drawing pen move faster during loud beats and drag during quiet moments">
               <label for="gridVolumeSpeed">Volume Speed Influence</label>
               <div style="display: flex; align-items: center; gap: 10px;">
                 <input id="gridVolumeSpeed" type="range" min="0" max="5" step="0.1" value="${currentSettings.gridVolumeSpeed}" style="flex: 1;" />
                 <output id="gridVolumeSpeedValue" style="min-width: 35px; text-align: right; font-size: 12px; color: var(--muted);">${currentSettings.gridVolumeSpeed.toFixed(1)}x</output>
               </div>
             </div>
-            <div class="field compact checkbox-row" id="uniformRadialRow" style="display: ${currentSettings.gridLayoutType === 'radial' ? 'block' : 'none'}; margin-bottom: 12px;">
+            <div class="field compact checkbox-row" id="uniformRadialRow" style="display: ${currentSettings.gridLayoutType === 'radial' ? 'block' : 'none'}; margin-bottom: 12px;" title="Scale timeline chunks proportionally to ring radius, keeping linear stylus drawing speed constant across all orbits">
               <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; font-weight: normal; text-transform: none; color: var(--text);">
                 <input id="gridUniformRadialSpeed" type="checkbox" ${currentSettings.gridUniformRadialSpeed ? 'checked' : ''} style="cursor: pointer; width: 15px; height: 15px; border-radius: 4px; accent-color: var(--accent);" />
                 Uniform radial speed
+              </label>
+            </div>
+            <div class="field compact checkbox-row" id="spinPreviewRow" style="display: ${currentSettings.gridLayoutType === 'radial' ? 'block' : 'none'}; margin-bottom: 12px;" title="Rotate the visualizer canvas counter-clockwise during play, keeping the drawing tip locked at 12 o'clock like a turntable stylus">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; font-weight: normal; text-transform: none; color: var(--text);">
+                <input id="gridSpin" type="checkbox" ${currentSettings.gridSpin ? 'checked' : ''} style="cursor: pointer; width: 15px; height: 15px; border-radius: 4px; accent-color: var(--accent);" />
+                Spin Preview (Vinyl effect)
               </label>
             </div>
           </div>
@@ -149,11 +183,13 @@ app.innerHTML = `
           <div class="settings-block-content" style="display: block;">
             <div class="band-settings">
               <div id="bandList"></div>
-              <button id="addBandButton" class="secondary band-add-button" type="button">Add band</button>
+              <button id="addBandButton" class="secondary band-add-button" type="button" title="Add a new custom frequency range and color mapping card">Add band</button>
             </div>
           </div>
         </section>
       </div>
+
+      <button id="resetSettingsButton" class="secondary" style="width: 100%; margin-top: 2px; margin-bottom: 18px;" type="button" title="Reset all visual layout parameters and color bands back to their default config">Reset to default settings</button>
 
       <div class="buttons-grid">
         <button id="previewButton" class="secondary" disabled>Play preview</button>
@@ -201,10 +237,13 @@ const gridVolumeSpeedInput = document.querySelector('#gridVolumeSpeed');
 const gridVolumeSpeedValue = document.querySelector('#gridVolumeSpeedValue');
 const gridUniformRadialSpeedInput = document.querySelector('#gridUniformRadialSpeed');
 const uniformRadialRow = document.querySelector('#uniformRadialRow');
+const gridSpinInput = document.querySelector('#gridSpin');
+const spinPreviewRow = document.querySelector('#spinPreviewRow');
 const strokeWidthInput = document.querySelector('#strokeWidth');
 const strokeWidthValue = document.querySelector('#strokeWidthValue');
 const bandList = document.querySelector('#bandList');
 const addBandButton = document.querySelector('#addBandButton');
+const resetSettingsButton = document.querySelector('#resetSettingsButton');
 const previewButton = document.querySelector('#previewButton');
 const pauseButton = document.querySelector('#pauseButton');
 const exportButton = document.querySelector('#exportButton');
@@ -636,12 +675,12 @@ function buildFramesFromAnalysis(analysis, title, settings) {
         let cellProgress = (pEnd > pStart) ? ((progress - pStart) / (pEnd - pStart)) : 0;
         if (cellProgress < 0) cellProgress = 0;
         if (cellProgress > 1) cellProgress = 1;
-
         const alternateDirection = settings.gridAlternating && (rowIndex % 2 === 1);
         const actualCellProgress = alternateDirection ? (1.0 - cellProgress) : cellProgress;
 
         let x = 0;
         let y = 0;
+        let angle = 0;
 
         if (layout === 'radial') {
             const cx = width / 2;
@@ -650,11 +689,12 @@ function buildFramesFromAnalysis(analysis, title, settings) {
             const minRadius = maxRadius * 0.15;
             const radiusRange = maxRadius - minRadius;
 
+            // Concentric circle radius/spiral winding and segment arcs
             const radius = (rows > 1) ? (minRadius + rowIndex * (radiusRange / (rows - 1))) : maxRadius;
             const angleSpan = (2 * Math.PI) / cols;
             const angleStart = colIndex * angleSpan;
 
-            const angle = angleStart + actualCellProgress * angleSpan;
+            angle = angleStart + actualCellProgress * angleSpan - Math.PI / 2;
 
             const rowHeight = (rows > 1) ? (radiusRange / rows) : maxRadius;
             const ampMod = mapRange(chunk.amplitude, 0, 0.4, -0.5, 0.5) * rowHeight * 0.8;
@@ -679,6 +719,7 @@ function buildFramesFromAnalysis(analysis, title, settings) {
             x: x,
             y: y,
             cellIndex: cellIndex,
+            angle: angle,
             title,
             timestampLabel: formatSeconds(chunk.time),
         });
@@ -694,6 +735,7 @@ function createRenderer(frames, title, settings) {
     };
     const fps = settings.fps || 30;
     const frameDuration = 1 / fps;
+    const layout = settings.gridLayoutType || 'linear';
 
     return {
         reset(ctx) {
@@ -703,9 +745,51 @@ function createRenderer(frames, title, settings) {
             clearCanvas(ctx, settings);
         },
         step(ctx, time) {
-            while (state.cursor < frames.length && frames[state.cursor].time <= time + frameDuration * 0.5) {
-                drawPoint(ctx, frames[state.cursor], state, settings);
-                state.cursor += 1;
+            const isSpinning = settings.gridSpin && layout === 'radial' && (time < 100000);
+
+            if (isSpinning) {
+                clearCanvas(ctx, settings);
+                state.lastPoint = null;
+
+                // Find the active frame at the current time to match the spin angle
+                let activeFrameIndex = 0;
+                for (let i = 0; i < frames.length; i += 1) {
+                    if (frames[i].time <= time + frameDuration * 0.5) {
+                        activeFrameIndex = i;
+                    } else {
+                        break;
+                    }
+                }
+                const activeFrame = frames[activeFrameIndex] || frames[0];
+                const spinAngle = activeFrame ? -(activeFrame.angle + Math.PI / 2) : 0;
+
+                const width = settings.width || 800;
+                const height = settings.height || 800;
+                const cx = width / 2;
+                const cy = height / 2;
+
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(spinAngle);
+                ctx.translate(-cx, -cy);
+
+                for (let i = 0; i < frames.length; i += 1) {
+                    if (frames[i].time > time + frameDuration * 0.5) {
+                        state.cursor = i;
+                        break;
+                    }
+                    drawPoint(ctx, frames[i], state, settings);
+                    if (i === frames.length - 1) {
+                        state.cursor = frames.length;
+                    }
+                }
+
+                ctx.restore();
+            } else {
+                while (state.cursor < frames.length && frames[state.cursor].time <= time + frameDuration * 0.5) {
+                    drawPoint(ctx, frames[state.cursor], state, settings);
+                    state.cursor += 1;
+                }
             }
         },
         drawOverlay(ctx, overlayTitle) {
@@ -897,7 +981,7 @@ function bindControlEvents() {
         });
     });
 
-    [canvasPreset, canvasFps, gridLayoutType, gridAlternatingInput, gridUniformRadialSpeedInput].forEach((control) => {
+    [canvasPreset, canvasFps, gridLayoutType, gridAlternatingInput, gridUniformRadialSpeedInput, gridSpinInput].forEach((control) => {
         control.addEventListener('change', () => {
             syncControlLabels();
             applySettings();
@@ -980,6 +1064,30 @@ function bindControlEvents() {
         });
     });
 
+    resetSettingsButton.addEventListener('click', () => {
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+        currentSettings = cloneSettings(DEFAULT_SETTINGS);
+        
+        backgroundColorInput.value = currentSettings.backgroundColor;
+        textColorInput.value = currentSettings.textColor;
+        canvasPreset.value = currentSettings.preset;
+        canvasWidthInput.value = currentSettings.width;
+        canvasHeightInput.value = currentSettings.height;
+        canvasFps.value = currentSettings.fps;
+        gridLayoutType.value = currentSettings.gridLayoutType;
+        gridRowsInput.value = currentSettings.gridRows;
+        gridColsInput.value = currentSettings.gridCols;
+        gridAlternatingInput.checked = currentSettings.gridAlternating;
+        gridVolumeSpeedInput.value = currentSettings.gridVolumeSpeed;
+        gridUniformRadialSpeedInput.checked = currentSettings.gridUniformRadialSpeed;
+        gridSpinInput.checked = currentSettings.gridSpin;
+        strokeWidthInput.value = currentSettings.strokeWidth;
+
+        renderBandControls(currentSettings.bands);
+        syncControlLabels();
+        applySettings();
+    });
+
     pauseButton.addEventListener('click', () => {
         togglePausePreview();
     });
@@ -997,8 +1105,10 @@ function syncControlLabels() {
 
     if (gridLayoutType.value === 'radial') {
         uniformRadialRow.style.display = 'block';
+        spinPreviewRow.style.display = 'block';
     } else {
         uniformRadialRow.style.display = 'none';
+        spinPreviewRow.style.display = 'none';
     }
 
     bandList.querySelectorAll('.band-item').forEach((item) => {
@@ -1018,6 +1128,7 @@ function syncControlLabels() {
 
 function applySettings() {
     currentSettings = readSettingsFromControls();
+    saveSettings(currentSettings);
 
     if (previewCanvas) {
         previewCanvas.width = currentSettings.width;
@@ -1106,6 +1217,7 @@ function readSettingsFromControls() {
         gridAlternating: gridAlternatingInput.checked,
         gridVolumeSpeed: Number.parseFloat(gridVolumeSpeedInput.value) || 0,
         gridUniformRadialSpeed: gridUniformRadialSpeedInput.checked,
+        gridSpin: gridSpinInput.checked,
         bands: bands.length > 0 ? bands : cloneSettings(DEFAULT_SETTINGS).bands,
     };
 }
