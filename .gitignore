@@ -4,3 +4,5 @@ free music
 !assets/*
 *application.*
 .DS_Store
+browser-visualizer/dist/
+browser-visualizer/node_modules/
