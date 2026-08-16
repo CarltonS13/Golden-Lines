@@ -195,6 +195,7 @@ app.innerHTML = `
         <button id="previewButton" class="secondary" disabled>Play preview</button>
         <button id="pauseButton" class="secondary" style="display: none;" disabled>Pause</button>
         <button id="exportButton" class="primary" disabled>Export MP4</button>
+        <button id="exportSvgButton" class="secondary" disabled>Export SVG</button>
       </div>
 
       <div class="status" id="status">
@@ -247,6 +248,7 @@ const resetSettingsButton = document.querySelector('#resetSettingsButton');
 const previewButton = document.querySelector('#previewButton');
 const pauseButton = document.querySelector('#pauseButton');
 const exportButton = document.querySelector('#exportButton');
+const exportSvgButton = document.querySelector('#exportSvgButton');
 const statusEl = document.querySelector('#status');
 const progressBar = document.querySelector('#progressBar');
 const metaEl = document.querySelector('#meta');
@@ -286,6 +288,7 @@ fileInput.addEventListener('change', async () => {
     setStatus('Loading audio file...', true);
     previewButton.disabled = true;
     exportButton.disabled = true;
+    exportSvgButton.disabled = true;
 
     currentFileName = file.name;
     currentTitle = stripExtension(file.name);
@@ -303,6 +306,7 @@ fileInput.addEventListener('change', async () => {
     setStatus(`Loaded <strong>${escapeHtml(currentFileName)}</strong>. Preview and export are ready.`, false);
     previewButton.disabled = false;
     exportButton.disabled = false;
+    exportSvgButton.disabled = false;
 });
 
 previewButton.addEventListener('click', async () => {
@@ -333,14 +337,15 @@ previewButton.addEventListener('click', async () => {
 });
 
 exportButton.addEventListener('click', async () => {
-    if (!currentAudioBuffer) {
-        return;
-    }
+    if (!currentFrames || currentFrames.length === 0) return;
 
     stopPreview(); // Stop any active preview playback
 
-    exportButton.disabled = true;
     previewButton.disabled = true;
+    pauseButton.disabled = true;
+    exportButton.disabled = true;
+    exportSvgButton.disabled = true;
+
     setStatus('Preparing browser export...', true);
     setProgress(0);
 
@@ -348,12 +353,110 @@ exportButton.addEventListener('click', async () => {
         await exportMovie();
         setStatus('Export complete. The MP4 download should begin automatically.', false);
     } catch (error) {
-        console.error(error);
+        console.error('Export error:', error);
         setStatus(`Export failed: ${escapeHtml(error?.message || String(error))}`, false, true);
     } finally {
-        previewButton.disabled = false;
         exportButton.disabled = false;
+        exportSvgButton.disabled = false;
+        previewButton.disabled = false;
     }
+});
+
+exportSvgButton.addEventListener('click', () => {
+    if (!currentFrames || currentFrames.length === 0) return;
+
+    exportSvgButton.disabled = true;
+    setStatus('Generating SVG...', true);
+
+    setTimeout(() => {
+        try {
+            const width = currentSettings.width || 800;
+            const height = currentSettings.height || 800;
+            const bgColor = currentSettings.backgroundColor;
+            
+            let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">\n`;
+            svg += `<rect width="100%" height="100%" fill="${bgColor}" />\n`;
+
+            let paths = [];
+            let currentPath = null;
+            const layout = currentSettings.gridLayoutType || 'linear';
+            const isSpinning = currentSettings.gridSpin && layout === 'radial';
+
+            if (isSpinning) {
+                const lastFrame = currentFrames[currentFrames.length - 1];
+                const spinAngle = lastFrame ? -(lastFrame.angle + Math.PI / 2) : 0;
+                const spinDegrees = spinAngle * (180 / Math.PI);
+                const cx = width / 2;
+                const cy = height / 2;
+                svg += `<g transform="translate(${cx}, ${cy}) rotate(${spinDegrees.toFixed(3)}) translate(-${cx}, -${cy})">\n`;
+            }
+
+            let lastPoint = null;
+
+            for (let point of currentFrames) {
+                const isBoundary = lastPoint && lastPoint.cellIndex !== point.cellIndex;
+
+                if (isBoundary) {
+                    lastPoint = null;
+                }
+
+                if (lastPoint) {
+                    const isNewColor = currentPath && currentPath.color !== point.color;
+
+                    if (!currentPath || isNewColor) {
+                        if (currentPath) {
+                            paths.push(currentPath);
+                        }
+                        currentPath = {
+                            cellIndex: point.cellIndex,
+                            color: point.color,
+                            d: `M ${lastPoint.x.toFixed(3)} ${lastPoint.y.toFixed(3)} L ${point.x.toFixed(3)} ${point.y.toFixed(3)}`
+                        };
+                    } else {
+                        currentPath.d += ` L ${point.x.toFixed(3)} ${point.y.toFixed(3)}`;
+                    }
+                } else {
+                    if (currentPath) {
+                        paths.push(currentPath);
+                        currentPath = null;
+                    }
+                }
+
+                lastPoint = point;
+            }
+            
+            if (currentPath) {
+                paths.push(currentPath);
+            }
+
+            for (let p of paths) {
+                svg += `<path d="${p.d}" fill="none" stroke="${p.color}" stroke-width="${currentSettings.strokeWidth}" stroke-linecap="round" stroke-linejoin="round" />\n`;
+            }
+
+            if (isSpinning) {
+                svg += `</g>\n`;
+            }
+
+            const label = currentTitle || 'Untitled';
+            svg += `<text x="${width - 32}" y="${height - 16}" font-family="Helvetica, Arial, sans-serif" font-size="11px" fill="${currentSettings.textColor}" text-anchor="end">${escapeHtml(label)}</text>\n`;
+            svg += `</svg>`;
+
+            const blob = new Blob([svg], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${label}.svg`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            setStatus('SVG Export complete. The download should begin automatically.', false);
+        } catch (error) {
+            console.error('SVG Export error:', error);
+            setStatus(`SVG Export failed: ${escapeHtml(error?.message || String(error))}`, false, true);
+        } finally {
+            exportSvgButton.disabled = false;
+        }
+    }, 50);
 });
 
 async function decodeFile(file) {
